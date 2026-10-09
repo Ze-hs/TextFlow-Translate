@@ -30,9 +30,6 @@ def chunk_text(text, max_size: int = 3000):
                 chunks.append(text[chunk_start:sentence_start])
                 chunk_start = sentence_start
 
-        chunks.append(text[chunk_start: sentence_end])
-        chunk_start = sentence_end
-
     if chunk_start < len(text):
       chunks.append(text[chunk_start:])
 
