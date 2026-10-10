@@ -7,6 +7,8 @@ from dotenv import load_dotenv
 from requests.adapters import HTTPAdapter
 from urllib3 import Retry
 
+from src.config import APIConfig
+
 load_dotenv()
 
 logging.basicConfig(
@@ -16,9 +18,9 @@ logging.basicConfig(
 logging.getLogger("urllib3").setLevel(logging.DEBUG)
 
 
-def create_session() -> requests.Session:
+def create_session(api_config: APIConfig) -> requests.Session:
     retries = Retry(
-        total=3,
+        total=api_config.max_retries,
         backoff_factor=2,
         status_forcelist=[429, 500, 502, 503, 504],
         allowed_methods={"POST"},
@@ -30,12 +32,12 @@ def create_session() -> requests.Session:
 
     return session
 
-def request_chat(prompt: str):
+def request_chat(prompt: str, api_config: APIConfig):
     OPEN_ROUTER_KEY = os.getenv("OPENROUTER_API_KEY")
 
     if not OPEN_ROUTER_KEY:
         raise ValueError("Missing OPEN_ROUTER_KEY")
-    session = create_session()
+    session = create_session(api_config)
 
     response = session.post(
         url="https://openrouter.ai/api/v1/chat/completions",
@@ -56,7 +58,7 @@ def request_chat(prompt: str):
                 "exclude": True,
             },
         },
-        timeout=60,
+        timeout=api_config.timeout_seconds,
     )
 
     response.raise_for_status()
