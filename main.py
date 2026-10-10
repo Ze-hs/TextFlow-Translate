@@ -1,37 +1,25 @@
-import os
-
-import requests
 import json
-from dotenv import load_dotenv
+import logging
+from pathlib import Path
 
-load_dotenv()
-
-OPEN_ROUTER_KEY = os.getenv("OPENROUTER_API_KEY")
-
-def main():
-    print("Hello World")
+from src.storage import load_file, save_text
+from src.translator import translate_text
 
 
-response = requests.post(
-  url="https://openrouter.ai/api/v1/chat/completions",
-  headers={
-    "Authorization": f"Bearer {OPEN_ROUTER_KEY}",
-  },
-  data=json.dumps({
-    "model": "openrouter/free",
-    "messages": [
-      {
-        "role": "user",
-        "content": "What is the meaning of life?"
-      },
-    ],
-      "reasoning": {
-          "effort": "low",
-          "exclude": True
-      }
-  })
-)
 
-print(response.ok)
-print(json.dumps(response.json(), indent=4))
-print()
+def set_up_logger():
+    Path("debug/logs").mkdir(exist_ok=True, parents=True)
+
+    with open(Path("./logging.json")) as file:
+        config = json.load(file)
+
+    logging.config.dictConfig(config=config)
+
+
+
+
+set_up_logger()
+text = load_file("test.txt")
+
+translation = translate_text(text)
+save_text(translation, "tests/samples/translation.txt")
