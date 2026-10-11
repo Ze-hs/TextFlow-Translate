@@ -45,15 +45,6 @@ def init_database():
             );
         """)
 
-# create_job()	Create a new translation job and return its ID
-# get_job()	Retrieve a job's details and status
-# update_job_status()	Mark a job as processing, completed, or failed
-# create_chunks()	Save all source chunks for a job before translating
-# get_pending_chunks()	Retrieve chunks that still need translation
-# save_chunk_translation()	Save a successful translation and mark the chunk completed
-# update_chunk_status()	Mark a chunk as processing or failed, including its error message
-# get_translated_chunks()	Retrieve translations in the correct order for export
-
 def create_job(
     source_path: str,
     source_language: str,
