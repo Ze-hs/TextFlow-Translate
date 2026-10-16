@@ -4,17 +4,24 @@ import logging
 from src.chunking import chunk_text
 from src.config import AppConfig
 from src.openrouter import request_chat
+from src.storage import save_text
 
 logger = logging.getLogger("TextFlow")
 
 def translate_chunks(chunks: list[str], config: AppConfig):
+    """
+    Translates each chunk and returns the list of chunks
+    :param chunks:
+    :param config:
+    :return:
+    """
     translated_chunks = []
 
     for index, chunk in enumerate(chunks, start=1):
         logger.debug(f"Starting translation request through OpenRouter: {index}/{len(chunks)}" )
         translation = request_translation(chunk, config)
         translated_chunks.append(translation)
-
+        save_text(translation, f"{config.output.directory}/{index}.txt")
     return translated_chunks
 
 def translate_text(text: str, config: AppConfig):
@@ -42,8 +49,8 @@ def request_translation(chunk: str, config: AppConfig):
     choice = response["choices"][0]
     message = choice["message"]["content"]
 
-    logger.debug(f"Model: {response["model"]} | Finish Reason: {choice["finish_reason"]}",)
-    logger.debug(f"Message: {message}\n")
-    logger.debug(f"Token usage: {response["usage"]}",)
+    # logger.debug(f"Model: {response["model"]} | Finish Reason: {choice["finish_reason"]}",)
+    # logger.info(f"Message: {message}\n")
+    # logger.info(f"Token usage: {json.dumps(response["usage"], indent=2, ensure_ascii=False)}",)
 
     return message
