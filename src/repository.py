@@ -129,6 +129,17 @@ def get_pending_chunks(job_id: int):
             (job_id,)
         ).fetchall()
 
+def get_all_pending_chunks():
+    with closing(get_connection()) as conn:
+        return conn.execute(
+            """
+            SELECT * 
+            FROM translation_chunks
+            WHERE status = 'pending'
+            ORDER BY chunk_index;
+            """
+        ).fetchall()
+
 def save_chunk_translation(
     job_id: int,
     chunk_index: int,
