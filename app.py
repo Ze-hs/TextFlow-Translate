@@ -30,9 +30,11 @@ def main():
     args = parser.parse_args()
 
     config = init_app()
-
-    text = load_file(args.input)
-    translation = translate_text(text, config)
-    save_text(translation, args.output)
+    args.func(args, config)
+    
+    # text = load_file(args.input)
+    # translation = translate_text(text, config)
+    # save_text(translation, args.output)
 
 if __name__ == "__main__":
+    main()

@@ -1,5 +1,9 @@
 import argparse
 
+from src.CLI.commands import translate_novel, list_pending_chunks, resume_translations, initialize_translation, \
+    list_pending_jobs
+
+
 def add_translate_parser(subparser):
     # Translate Novel
     translate_parser = subparser.add_parser(
@@ -15,6 +19,8 @@ def add_translate_parser(subparser):
         help="Path to save the translation",
     )
 
+    translate_parser.set_defaults(func=translate_novel)
+
 def add_status_parser(subparser):
     # Check Status
     status_parser = subparser.add_parser(
@@ -25,20 +31,45 @@ def add_status_parser(subparser):
         "-id",
         help="ID of the translation to check else returns all",
     )
+    status_parser.set_defaults(func=list_pending_chunks)
+
+def add_jobs_parser(subparser):
+    # Check Status
+    job_parser = subparser.add_parser(
+        "jobs",
+        help="Check jobs progress",
+    )
+    job_parser.add_argument(
+        "-p",
+        "--pending",
+        action="store_true",
+        help="Prints only pending jobs",
+    )
+
+    job_parser.set_defaults(func=list_pending_jobs)
+
+
+
 
 def add_continue_parser(subparser):
     # Continue Translations
-    subparser.add_parser(
+    continue_parser = subparser.add_parser(
         "continue",
         help="Continue unfinished translations")
+    continue_parser.set_defaults(func=resume_translations)
 
-
-def add_chunks_parser(subparser):
+def add_prepare_novel_parser(subparser):
     # Continue Translations
-    subparser.add_parser(
-        "parse",
-        help="Parse a novel but dont send it to openrouter for translations")
+    init_parser = subparser.add_parser(
+        "prepare",
+        help="Chunk a novel but dont send it to openrouter for translations")
 
+    init_parser.add_argument(
+        "input_path",
+        help="Location of novel",
+    )
+
+    init_parser.set_defaults(func=initialize_translation)
 
 def create_parser():
     parser = argparse.ArgumentParser()
@@ -50,7 +81,8 @@ def create_parser():
     add_status_parser(subparser)
     add_translate_parser(subparser)
     add_continue_parser(subparser)
-    add_chunks_parser(subparser)
+    add_prepare_novel_parser(subparser)
+    add_jobs_parser(subparser)
     return parser
 
 

@@ -4,9 +4,21 @@ import logging
 from src.chunking import chunk_text
 from src.config import AppConfig
 from src.openrouter import request_chat
+from src.repository import save_chunks
 from src.storage import save_text
 
 logger = logging.getLogger("TextFlow")
+
+def prepare_translations(text: str, job_id: str, config: AppConfig):
+    """
+    Splits text into chunks and saves the chunks into the DB
+    :param config:
+    :param text:
+    :return:
+    """
+    logger.debug("Prepare Translations")
+    chunks = chunk_text(text, config.translation.max_chunk_chars)
+    save_chunks(chunks, job_id)
 
 def translate_chunks(chunks: list[str], config: AppConfig):
     """
