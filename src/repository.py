@@ -3,7 +3,7 @@ from contextlib import closing
 from pathlib import Path
 
 cur = Path(__file__).parent.resolve()
-DATABASE_PATH = cur / "data/translations.db"
+DATABASE_PATH = cur / "../data/translations.db"
 
 def get_connection():
     DATABASE_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -22,7 +22,7 @@ def init_database():
                 source_path TEXT NOT NULL,
                 source_language TEXT NOT NULL,
                 target_language TEXT NOT NULL,
-                model TEXT NOT NULL,
+                model TEXT,
                 status TEXT NOT NULL DEFAULT 'pending',
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -49,7 +49,6 @@ def create_job(
     source_path: str,
     source_language: str,
     target_language: str,
-    model: str,
 ):
     with closing(get_connection()) as conn:
         with conn:
@@ -58,16 +57,15 @@ def create_job(
                 INSERT INTO translation_jobs (
                     source_path,
                     source_language,
-                    target_language,
-                    model
+                    target_language
                 )
-                VALUES (?, ?, ?, ?)
+                VALUES (?, ?, ?)
                 """,
                 (
                     source_path,
                     source_language,
                     target_language,
-                    model,
+
                 ),
             )
 
@@ -100,7 +98,7 @@ def update_job_status(job_id: int, status: str) -> bool:
 
             return cursor.rowcount > 0
 
-def create_chunks(job_id: int, chunks: list[str]):
+def save_chunks(chunks: list[str], job_id: str):
     with closing(get_connection()) as conn:
         with conn:
             for index, chunk in enumerate(chunks):
@@ -115,6 +113,21 @@ def create_chunks(job_id: int, chunks: list[str]):
                     """,
                     (job_id, index, chunk)
                 )
+
+def save_chunk(chunk: str, index: int, job_id):
+    with closing(get_connection()) as conn:
+        with conn:
+            conn.execute(
+                """
+                INSERT INTO translation_chunks (
+                    job_id,
+                    chunk_index,
+                    source_text
+                )
+                VALUES (?, ?, ?);
+                """,
+                (job_id, index, chunk)
+            )
 
 def get_pending_chunks(job_id: int):
     with closing(get_connection()) as conn:
@@ -195,4 +208,38 @@ def get_translated_chunks(job_id: int):
             ORDER BY chunk_index;
             """,
             (job_id,)
+        ).fetchall()
+
+def get_next_chunks(job_id):
+    with closing(get_connection()) as conn:
+        return conn.execute(
+            """
+            SELECT *
+            FROM translation_chunks
+            WHERE job_id = ?
+              AND status != 'completed'
+            ORDER BY chunk_index ASC
+            LIMIT 1;
+            """,
+            (job_id,)
+        ).fetchall()
+
+def get_all_pending_jobs():
+    with closing(get_connection()) as conn:
+        return conn.execute(
+            """
+            SELECT *
+            FROM translation_jobs
+            WHERE status != 'completed'
+            """
+        ).fetchall()
+
+
+def get_all_jobs():
+    with closing(get_connection()) as conn:
+        return conn.execute(
+            """
+            SELECT *
+            FROM translation_jobs
+            """
         ).fetchall()
