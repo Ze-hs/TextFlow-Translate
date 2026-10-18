@@ -1,7 +1,7 @@
 {
     "translation": {
-        "source_language": "English",
-        "target_language": "Spanish",
+        "source_language": "Japanese",
+        "target_language": "English",
         "default_model": "openrouter/free",
         "style": "natural",
         "max_chunk_chars": 2000

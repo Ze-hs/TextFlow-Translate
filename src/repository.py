@@ -114,44 +114,6 @@ def save_chunks(chunks: list[str], job_id: str):
                     (job_id, index, chunk)
                 )
 
-def save_chunk(chunk: str, index: int, job_id):
-    with closing(get_connection()) as conn:
-        with conn:
-            conn.execute(
-                """
-                INSERT INTO translation_chunks (
-                    job_id,
-                    chunk_index,
-                    source_text
-                )
-                VALUES (?, ?, ?);
-                """,
-                (job_id, index, chunk)
-            )
-
-def get_pending_chunks(job_id: int):
-    with closing(get_connection()) as conn:
-        return conn.execute(
-            """
-            SELECT * 
-            FROM translation_chunks
-            WHERE job_id = ? AND
-            status = 'pending'
-            ORDER BY chunk_index;
-            """,
-            (job_id,)
-        ).fetchall()
-
-def get_all_pending_chunks():
-    with closing(get_connection()) as conn:
-        return conn.execute(
-            """
-            SELECT * 
-            FROM translation_chunks
-            WHERE status = 'pending'
-            ORDER BY chunk_index;
-            """
-        ).fetchall()
 
 def save_chunk_translation(
     job_id: int,
@@ -248,7 +210,6 @@ def get_next_chunk_index(job_id):
         ).fetchone()
 
 def get_chunk(job_id: str, chunk_index: str):
-    print(job_id, chunk_index)
     with closing(get_connection()) as conn:
         return conn.execute(
             """
@@ -279,3 +240,36 @@ def get_all_jobs():
             FROM translation_jobs
             """
         ).fetchall()
+
+def delete_job(job_id: str):
+    with closing(get_connection()) as conn:
+        with conn:
+            cursor = conn.execute(
+            """
+            DELETE FROM translation_jobs
+            WHERE id = ?;
+            """,
+            (job_id,)
+            )
+
+            return cursor.rowcount > 0
+
+def get_job_chunk_stats(job_id: int):
+    with closing(get_connection()) as conn:
+        return conn.execute(
+            """
+            SELECT
+                COUNT(*) AS total,
+                SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END)
+                    AS completed,
+                SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END)
+                    AS pending,
+                SUM(CASE WHEN status = 'processing' THEN 1 ELSE 0 END)
+                    AS processing,
+                SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END)
+                    AS failed
+            FROM translation_chunks
+            WHERE job_id = ?;
+            """,
+            (job_id,)
+        ).fetchone()
