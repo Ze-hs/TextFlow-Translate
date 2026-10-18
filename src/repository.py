@@ -175,6 +175,31 @@ def save_chunk_translation(
 
             return cursor.rowcount > 0
 
+
+def update_chunk(
+    job_id: int,
+    chunk_index: int,
+    status: str,
+    translated_text: str,
+    error_message: str | None = None
+) -> bool:
+    with closing(get_connection()) as conn:
+        with conn:
+            cursor = conn.execute(
+                """
+                UPDATE translation_chunks
+                SET status = ?,
+                    error_message = ?,
+                    translated_text = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE job_id = ?
+                  AND chunk_index = ?;
+                """,
+                (status, error_message, translated_text, job_id, chunk_index)
+            )
+
+            return cursor.rowcount > 0
+
 def update_chunk_status(
     job_id: int,
     chunk_index: int,
@@ -210,19 +235,30 @@ def get_translated_chunks(job_id: int):
             (job_id,)
         ).fetchall()
 
-def get_next_chunks(job_id):
+def get_next_chunk_index(job_id):
+    with closing(get_connection()) as conn:
+        return conn.execute(
+            """
+            SELECT MIN(chunk_index)
+            FROM translation_chunks
+            WHERE job_id = ?
+              AND status != 'completed'
+            """,
+            (job_id,)
+        ).fetchone()
+
+def get_chunk(job_id: str, chunk_index: str):
+    print(job_id, chunk_index)
     with closing(get_connection()) as conn:
         return conn.execute(
             """
             SELECT *
             FROM translation_chunks
             WHERE job_id = ?
-              AND status != 'completed'
-            ORDER BY chunk_index ASC
-            LIMIT 1;
+              AND chunk_index = ?
             """,
-            (job_id,)
-        ).fetchall()
+            (job_id, chunk_index)
+        ).fetchone()
 
 def get_all_pending_jobs():
     with closing(get_connection()) as conn:

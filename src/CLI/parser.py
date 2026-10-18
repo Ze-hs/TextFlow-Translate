@@ -56,6 +56,8 @@ def add_continue_parser(subparser):
     continue_parser = subparser.add_parser(
         "continue",
         help="Continue unfinished translations")
+
+    continue_parser.add_argument("job_id")
     continue_parser.set_defaults(func=resume_translations)
 
 def add_prepare_novel_parser(subparser):

@@ -61,8 +61,8 @@ def request_translation(chunk: str, config: AppConfig):
     choice = response["choices"][0]
     message = choice["message"]["content"]
 
-    # logger.debug(f"Model: {response["model"]} | Finish Reason: {choice["finish_reason"]}",)
-    # logger.info(f"Message: {message}\n")
-    # logger.info(f"Token usage: {json.dumps(response["usage"], indent=2, ensure_ascii=False)}",)
+    logger.debug(f"Model: {response["model"]} | Finish Reason: {choice["finish_reason"]}",)
+    logger.info(f"Message: {message}\n")
+    logger.info(f"Token usage: {json.dumps(response["usage"], indent=2, ensure_ascii=False)}",)
 
     return message
