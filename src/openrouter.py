@@ -37,29 +37,32 @@ def request_chat(prompt: str, api_config: APIConfig):
 
     if not OPEN_ROUTER_KEY:
         raise ValueError("Missing OPEN_ROUTER_KEY")
-    session = create_session(api_config)
 
-    response = session.post(
-        url="https://openrouter.ai/api/v1/chat/completions",
-        headers={
-            "Authorization": f"Bearer {OPEN_ROUTER_KEY}",
-            "Content-Type": "application/json",
-        },
-        json={
-            "model": "openrouter/free",
-            "messages": [
-                {
-                    "role": "user",
-                    "content": prompt,
-                }
-            ],
-            "reasoning": {
-                "effort": "low",
-                "exclude": True,
+    with create_session(api_config) as session:
+        response = session.post(
+            url="https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {OPEN_ROUTER_KEY}",
+                "Content-Type": "application/json",
             },
-        },
-        timeout=api_config.timeout_seconds,
-    )
+            json={
+                "model": "openrouter/free",
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": prompt,
+                    }
+                ],
+                "reasoning": {
+                    "effort": "low",
+                    "exclude": True,
+                },
+            },
+            timeout=api_config.timeout_seconds,
+        )
 
-    response.raise_for_status()
-    return response.json()
+        response.raise_for_status()
+        try:
+            return response.json()
+        except requests.exceptions.JSONDecodeError as exception:
+            raise ValueError("OpenRouter returned an invalid JSON response.") from exception

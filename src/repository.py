@@ -226,6 +226,17 @@ def get_chunk(job_id: str, chunk_index: str, database_path:str=DATABASE_PATH):
             (job_id, chunk_index)
         ).fetchone()
 
+def get_job_chunks(job_id: str, database_path:str=DATABASE_PATH):
+    with closing(get_connection(database_path)) as conn:
+        return conn.execute(
+            """
+            SELECT *
+            FROM translation_chunks
+            WHERE job_id = ?
+            """,
+            (job_id,)
+        ).fetchall()
+
 def get_all_pending_jobs(database_path:str=DATABASE_PATH):
     with closing(get_connection(database_path)) as conn:
         return conn.execute(
