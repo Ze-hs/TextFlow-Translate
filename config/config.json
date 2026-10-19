@@ -1,0 +1,17 @@
+{
+    "translation": {
+        "source_language": "Japanese",
+        "target_language": "English",
+        "default_model": "openrouter/free",
+        "style": "natural",
+        "max_chunk_chars": 2000
+    },
+    "api": {
+        "timeout_seconds": 60,
+        "max_retries": 3
+    },
+    "output": {
+        "directory": "translations",
+        "format": "txt"
+    }
+}

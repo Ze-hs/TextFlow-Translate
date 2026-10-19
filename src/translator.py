@@ -4,30 +4,28 @@ import logging
 from src.chunking import chunk_text
 from src.config import AppConfig
 from src.openrouter import request_chat
+from src.repository import save_chunks
+from src.storage import save_text
 
 logger = logging.getLogger("TextFlow")
 
-def translate_chunks(chunks: list[str], config: AppConfig):
-    translated_chunks = []
-
-    for index, chunk in enumerate(chunks, start=1):
-        logger.debug(f"Starting translation request through OpenRouter: {index}/{len(chunks)}" )
-        translation = request_translation(chunk, config)
-        translated_chunks.append(translation)
-
-    return translated_chunks
-
-def translate_text(text: str, config: AppConfig):
+def prepare_translations(text: str, job_id: str, config: AppConfig):
     """
-    Automatically splits text into chunks and returns a translation for each chunk combined
-    :param config:
+    Splits text into chunks and saves the chunks into the DB
     :param text:
+    :param job_id:
+    :param config:
     :return:
     """
-    logger.debug("Attempting Translations")
+    logger.debug("Preparing translations for job %s", job_id)
+
+    if not text.strip():
+        raise ValueError("Cannot prepare a translation from empty text.")
+
     chunks = chunk_text(text, config.translation.max_chunk_chars)
-    translated_chunks = translate_chunks(chunks, config)
-    return "\n\n".join(translated_chunks)
+
+    save_chunks(chunks, job_id)
+    logger.info("Saved %s chunks for job %s", len(chunks), job_id)
 
 def request_translation(chunk: str, config: AppConfig):
     """
@@ -36,14 +34,26 @@ def request_translation(chunk: str, config: AppConfig):
     :param chunk:
     :return:
     """
-    prompt = f"Translate the following passage into {config.translation.target_language}: \n {chunk}"
+    if not chunk.strip():
+        raise ValueError("Cannot translate an empty chunk.")
+
+
+    prompt = (
+        f"Translate the following passage into "
+        f"{config.translation.target_language}:\n{chunk}"
+    )
+
     response = request_chat(prompt, config.api)
 
-    choice = response["choices"][0]
-    message = choice["message"]["content"]
+    try:
+        message = response["choices"][0]["message"]["content"]
+    except (KeyError, IndexError, TypeError) as exception:
+        raise ValueError(
+            "OpenRouter returned an unexpected response format."
+        ) from exception
 
-    logger.debug(f"Model: {response["model"]} | Finish Reason: {choice["finish_reason"]}",)
-    logger.debug(f"Message: {message}\n")
-    logger.debug(f"Token usage: {response["usage"]}",)
+    # logger.debug(f"Model: {response["model"]} | Finish Reason: {choice["finish_reason"]}",)
+    # logger.info(f"Message: {message}\n")
+    # logger.info(f"Token usage: {json.dumps(response["usage"], indent=2, ensure_ascii=False)}",)
 
     return message

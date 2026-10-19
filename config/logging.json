@@ -37,7 +37,7 @@
       "class": "logging.handlers.RotatingFileHandler",
       "level": "DEBUG",
       "formatter": "detailed",
-      "filename": "debug/logs/nikke-assistant.log",
+      "filename": "debug/logs/textflow-translate.log",
       "maxBytes": 1048576,
       "backupCount": 3,
       "encoding": "utf-8"
