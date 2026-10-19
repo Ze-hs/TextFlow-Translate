@@ -5,17 +5,18 @@ from pathlib import Path
 cur = Path(__file__).parent.resolve()
 DATABASE_PATH = cur / "../data/translations.db"
 
-def get_connection():
-    DATABASE_PATH.parent.mkdir(parents=True, exist_ok=True)
+def get_connection(database_path:str=DATABASE_PATH):
+    database_path = Path(database_path)
+    database_path.parent.mkdir(parents=True, exist_ok=True)
 
-    connection = sqlite3.connect(DATABASE_PATH)
+    connection = sqlite3.connect(database_path)
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA foreign_keys = ON")
 
     return connection
 
-def init_database():
-    with closing(get_connection()) as conn:
+def init_database(database_path:str=DATABASE_PATH):
+    with closing(get_connection(database_path)) as conn:
         conn.executescript("""
             CREATE TABLE IF NOT EXISTS translation_jobs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -49,8 +50,9 @@ def create_job(
     source_path: str,
     source_language: str,
     target_language: str,
+    database_path:str=DATABASE_PATH
 ):
-    with closing(get_connection()) as conn:
+    with closing(get_connection(database_path)) as conn:
         with conn:
             cursor = conn.execute(
                 """
@@ -72,8 +74,8 @@ def create_job(
             return cursor.lastrowid
 
 
-def get_job(job_id: int):
-    with closing(get_connection()) as conn:
+def get_job(job_id: int, database_path:str=DATABASE_PATH):
+    with closing(get_connection(database_path)) as conn:
         return conn.execute(
             """
             SELECT * 
@@ -83,8 +85,8 @@ def get_job(job_id: int):
             (job_id,)
         ).fetchone()
 
-def update_job_status(job_id: int, status: str) -> bool:
-    with closing(get_connection()) as conn:
+def update_job_status(job_id: int, status: str, database_path:str=DATABASE_PATH) -> bool:
+    with closing(get_connection(database_path)) as conn:
         with conn:
             cursor = conn.execute(
                 """
@@ -98,8 +100,8 @@ def update_job_status(job_id: int, status: str) -> bool:
 
             return cursor.rowcount > 0
 
-def save_chunks(chunks: list[str], job_id: str):
-    with closing(get_connection()) as conn:
+def save_chunks(chunks: list[str], job_id: str, database_path:str=DATABASE_PATH):
+    with closing(get_connection(database_path)) as conn:
         with conn:
             for index, chunk in enumerate(chunks):
                 conn.execute(
@@ -118,9 +120,10 @@ def save_chunks(chunks: list[str], job_id: str):
 def save_chunk_translation(
     job_id: int,
     chunk_index: int,
-    translated_text: str
+    translated_text: str,
+    database_path:str=DATABASE_PATH
 ):
-    with closing(get_connection()) as conn:
+    with closing(get_connection(database_path)) as conn:
         with conn:
             cursor = conn.execute(
                 """
@@ -143,9 +146,10 @@ def update_chunk(
     chunk_index: int,
     status: str,
     translated_text: str,
-    error_message: str | None = None
+    error_message: str | None = None,
+    database_path:str=DATABASE_PATH
 ) -> bool:
-    with closing(get_connection()) as conn:
+    with closing(get_connection(database_path)) as conn:
         with conn:
             cursor = conn.execute(
                 """
@@ -166,9 +170,10 @@ def update_chunk_status(
     job_id: int,
     chunk_index: int,
     status: str,
-    error_message: str | None = None
+    error_message: str | None = None,
+    database_path:str=DATABASE_PATH
 ) -> bool:
-    with closing(get_connection()) as conn:
+    with closing(get_connection(database_path)) as conn:
         with conn:
             cursor = conn.execute(
                 """
@@ -184,8 +189,8 @@ def update_chunk_status(
 
             return cursor.rowcount > 0
 
-def get_translated_chunks(job_id: int):
-    with closing(get_connection()) as conn:
+def get_translated_chunks(job_id: int, database_path:str=DATABASE_PATH):
+    with closing(get_connection(database_path)) as conn:
         return conn.execute(
             """
             SELECT *
@@ -197,8 +202,8 @@ def get_translated_chunks(job_id: int):
             (job_id,)
         ).fetchall()
 
-def get_next_chunk_index(job_id):
-    with closing(get_connection()) as conn:
+def get_next_chunk_index(job_id, database_path:str=DATABASE_PATH):
+    with closing(get_connection(database_path)) as conn:
         return conn.execute(
             """
             SELECT MIN(chunk_index)
@@ -209,8 +214,8 @@ def get_next_chunk_index(job_id):
             (job_id,)
         ).fetchone()
 
-def get_chunk(job_id: str, chunk_index: str):
-    with closing(get_connection()) as conn:
+def get_chunk(job_id: str, chunk_index: str, database_path:str=DATABASE_PATH):
+    with closing(get_connection(database_path)) as conn:
         return conn.execute(
             """
             SELECT *
@@ -221,8 +226,8 @@ def get_chunk(job_id: str, chunk_index: str):
             (job_id, chunk_index)
         ).fetchone()
 
-def get_all_pending_jobs():
-    with closing(get_connection()) as conn:
+def get_all_pending_jobs(database_path:str=DATABASE_PATH):
+    with closing(get_connection(database_path)) as conn:
         return conn.execute(
             """
             SELECT *
@@ -232,8 +237,8 @@ def get_all_pending_jobs():
         ).fetchall()
 
 
-def get_all_jobs():
-    with closing(get_connection()) as conn:
+def get_all_jobs(database_path:str=DATABASE_PATH):
+    with closing(get_connection(database_path)) as conn:
         return conn.execute(
             """
             SELECT *
@@ -241,8 +246,8 @@ def get_all_jobs():
             """
         ).fetchall()
 
-def delete_job(job_id: str):
-    with closing(get_connection()) as conn:
+def delete_job(job_id: str, database_path:str=DATABASE_PATH):
+    with closing(get_connection(database_path)) as conn:
         with conn:
             cursor = conn.execute(
             """
@@ -254,8 +259,8 @@ def delete_job(job_id: str):
 
             return cursor.rowcount > 0
 
-def get_job_chunk_stats(job_id: int):
-    with closing(get_connection()) as conn:
+def get_job_chunk_stats(job_id: int, database_path:str=DATABASE_PATH):
+    with closing(get_connection(database_path)) as conn:
         return conn.execute(
             """
             SELECT
